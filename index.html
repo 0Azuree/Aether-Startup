@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personalized Startup Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #FFFFFF;
+            --primary-color: #A0A0A0;
+            --secondary-color: #404040;
+            --glass-blur: 16px;
+            --border-radius: 1rem;
+            --ui-scale: 1;
+            --transition-duration: 300ms;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color var(--transition-duration), color var(--transition-duration);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            overflow: auto;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* LIQUID GLASS THEME STYLES */
+        .liquid-glass-element {
+            /* This is the key for the glass effect */
+            backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+            -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: all var(--transition-duration) ease-in-out;
+        }
+
+        /* Animation for smooth scaling */
+        .animated-scale {
+            transition: transform var(--transition-duration), box-shadow var(--transition-duration);
+            border-radius: var(--border-radius);
+        }
+
+        .animated-scale:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Custom color wheel styling for visual aid */
+        .color-wheel-mock {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--text-color);
+            cursor: pointer;
+            transition: border-color var(--transition-duration);
+        }
+        
+        /* Font Scaling based on UI Scale setting */
+        .ui-text {
+            font-size: calc(1rem * var(--ui-scale));
+        }
+
+        .ui-text-lg {
+            font-size: calc(2.5rem * var(--ui-scale));
+        }
+        
+        .ui-text-sm {
+            font-size: calc(0.875rem * var(--ui-scale));
+        }
+
+    </style>
+</head>
+<body class="bg-black text-white">
+
+    <!-- Main Content Container -->
+    <div id="main-content" class="main-container">
+
+        <!-- Date & Time (Initially Hidden) -->
+        <div id="time-date" class="ui-text-lg font-extralight mb-8 hidden">
+            <span id="current-time">00:00</span>
+            <span class="text-gray-500"> | </span>
+            <span id="current-date">Mon, Jan 1</span>
+        </div>
+
+        <!-- Search Bar -->
+        <div id="search-container" class="w-full relative px-4 sm:px-0">
+            <form id="search-form" class="flex rounded-full shadow-2xl animated-scale" onsubmit="handleSearch(event)">
+                <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Search Google, DuckDuckGo, or your history..."
+                    autocomplete="off"
+                    class="ui-text flex-grow p-4 bg-gray-900 bg-opacity-80 focus:bg-gray-800 focus:outline-none placeholder-gray-400 rounded-l-full"
+                    style="border-radius: var(--border-radius) 0 0 var(--border-radius); background-color: var(--secondary-color); color: var(--text-color); transition: all var(--transition-duration);"
+                >
+                <button
+                    type="submit"
+                    class="p-4 px-6 bg-gray-700 hover:bg-gray-600 transition duration-150 ease-in-out text-white font-semibold rounded-r-full"
+                    style="background-color: var(--primary-color); border-radius: 0 var(--border-radius) var(--border-radius) 0; transition: all var(--transition-duration);"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </button>
+            </form>
+
+            <!-- Search History List (Dropdown) -->
+            <div id="history-dropdown" class="absolute z-10 w-full mt-2 rounded-xl shadow-lg bg-gray-900 hidden"
+                 style="background-color: var(--secondary-color); border-radius: var(--border-radius); transition: all var(--transition-duration);">
+                <!-- History items will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Shortcuts Bar -->
+        <div id="shortcuts-bar" class="w-full flex justify-center mt-10 px-4 sm:px-0 hidden">
+            <div id="shortcuts-menu" class="flex flex-wrap justify-center gap-4 p-4 rounded-2xl shadow-xl"
+                 style="background-color: var(--secondary-color); border-radius: var(--border-radius); transition: all var(--transition-duration);">
+                <!-- Shortcuts will be dynamically added here -->
+                <button onclick="openShortcutModal()" class="shortcut-button group p-3 bg-gray-800 hover:bg-gray-700 flex items-center justify-center rounded-xl transition duration-150 ease-in-out shadow-md"
+                        style="min-width: 64px; min-height: 64px; background-color: var(--primary-color); border-radius: var(--border-radius); transition: all var(--transition-duration);">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white group-hover:scale-110 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Icon (Bottom Left) -->
+    <button onclick="openSettingsModal()" class="fixed bottom-6 left-6 p-4 rounded-full shadow-2xl animated-scale transition duration-300 ease-in-out hover:rotate-12"
+            style="background-color: var(--primary-color); border-radius: 50%; transition: all var(--transition-duration);">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.545.333 1.23.498 1.91.498z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+    </button>
+
+    <!-- Global Modal Overlay -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-70 z-40 hidden transition-opacity duration-300" onclick="closeAllModals()"></div>
+
+    <!-- 1. Initial Setup Modal (New Tab Redirect) -->
+    <div id="initial-modal" class="fixed inset-0 flex items-center justify-center z-50 p-4 transition-transform duration-500 ease-out hidden">
+        <div class="bg-gray-900 p-8 rounded-xl shadow-2xl max-w-lg w-full transform animated-scale"
+             style="background-color: var(--secondary-color); border-radius: var(--border-radius); transition: all var(--transition-duration);">
+            <h2 class="ui-text font-bold mb-4 text-center">Welcome! Essential Setup</h2>
+            <p class="ui-text-sm mb-6 text-gray-300">To use this page effectively as your new tab, it's highly recommended to install the **New Tab Redirect** extension.</p>
+            <a href="https://chromewebstore.google.com/detail/new-tab-redirect/icpgjfneehieebagbmdbhnlpiopdcmna" target="_blank"
+               class="block text-center py-3 rounded-lg font-semibold text-white animated-scale mb-4"
+               style="background-color: var(--primary-color); border-radius: var(--border-radius); transition: all var(--transition-duration);">
+                Install New Tab Redirect
+            </a>
+
+            <!-- Search Engine Choice -->
+            <div class="mt-4">
+                <label for="initial-search-engine" class="ui-text-sm block font-medium mb-2">Select Default Search Engine:</label>
+                <select id="initial-search-engine" class="w-full p-3 rounded-lg bg-gray-800 focus:ring-2 focus:ring-blue-500"
+                        style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius); transition: all var(--transition-duration);">
+                    <option value="https://www.google.com/search?q=">Google</option>
+                    <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
+                    <option value="https://www.bing.com/search?q=">Bing</option>
+                    <option value="https://search.brave.com/search?q=">Brave Search</option>
+                </select>
+            </div>
+
+            <button onclick="confirmInitialSetup()" class="w-full mt-6 py-3 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-500 animated-scale"
+                    style="border-radius: var(--border-radius); transition: all var(--transition-duration);">
+                I'm Ready! Continue to Dashboard
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. Settings Modal (Customization) -->
+    <div id="settings-modal" class="fixed inset-0 flex items-center justify-end z-50 p-4 transition-transform duration-500 ease-out hidden">
+        <div class="bg-gray-900 p-6 rounded-l-xl h-full w-full max-w-sm overflow-y-auto transform translate-x-full"
+             style="background-color: var(--secondary-color); transition: all var(--transition-duration);">
+            <div class="flex justify-between items-center mb-6 sticky top-0 pb-4" style="background-color: var(--secondary-color);">
+                <h2 class="ui-text font-bold">Settings & Customization (16+)</h2>
+                <button onclick="closeSettingsModal()" class="p-2 rounded-full hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <!-- Settings List (Min 15) -->
+            <div id="settings-list" class="space-y-6">
+
+                <!-- Theme Section -->
+                <h3 class="ui-text font-semibold border-b border-gray-700 pb-2">Appearance & Theme</h3>
+
+                <!-- S1: Theme Style (Solid, Gradient, Liquid Glass) -->
+                <div class="setting-item">
+                    <label class="ui-text-sm block font-medium mb-2">Theme Style</label>
+                    <select id="setting-theme-style" onchange="saveSettings()" class="w-full p-3 rounded-lg bg-gray-800"
+                            style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius);">
+                        <option value="black-white">Default (Black & White)</option>
+                        <option value="solid">Solid Custom Colors</option>
+                        <option value="gradient">Gradient Mix (Color Mix)</option>
+                        <option value="liquid-glass">Liquid Glass</option>
+                    </select>
+                </div>
+
+                <!-- S2: Primary Accent Color -->
+                <div class="setting-item">
+                    <label for="setting-primary-color" class="ui-text-sm block font-medium mb-2">1. Primary Color (Accent)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="setting-primary-color" onchange="saveSettings()" class="color-wheel-mock w-8 h-8 p-0 border-none" style="border: 1px solid var(--text-color); background-color: var(--primary-color);">
+                        <input type="text" id="setting-primary-hex" oninput="updateColorFromHex('primary')" onchange="saveSettings()" maxlength="7" class="ui-text-sm p-2 w-full rounded-lg bg-gray-800" value="#A0A0A0" style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius);">
+                    </div>
+                </div>
+
+                <!-- S3: Secondary Accent Color -->
+                <div class="setting-item">
+                    <label for="setting-secondary-color" class="ui-text-sm block font-medium mb-2">2. Secondary Color (Input/Container)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="setting-secondary-color" onchange="saveSettings()" class="color-wheel-mock w-8 h-8 p-0 border-none" style="border: 1px solid var(--text-color); background-color: var(--secondary-color);">
+                        <input type="text" id="setting-secondary-hex" oninput="updateColorFromHex('secondary')" onchange="saveSettings()" maxlength="7" class="ui-text-sm p-2 w-full rounded-lg bg-gray-800" value="#404040" style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius);">
+                    </div>
+                </div>
+
+                <!-- S4: Text Color -->
+                <div class="setting-item">
+                    <label for="setting-text-color" class="ui-text-sm block font-medium mb-2">3. Text Color</label>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="setting-text-color" onchange="saveSettings()" class="color-wheel-mock w-8 h-8 p-0 border-none" style="border: 1px solid var(--text-color); background-color: var(--text-color);">
+                        <input type="text" id="setting-text-hex" oninput="updateColorFromHex('text')" onchange="saveSettings()" maxlength="7" class="ui-text-sm p-2 w-full rounded-lg bg-gray-800" value="#FFFFFF" style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius);">
+                    </div>
+                </div>
+                
+                <!-- S5: Background Color -->
+                <div class="setting-item">
+                    <label for="setting-bg-color" class="ui-text-sm block font-medium mb-2">4. Background Color (Base)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="setting-bg-color" onchange="saveSettings()" class="color-wheel-mock w-8 h-8 p-0 border-none" style="border: 1px solid var(--text-color); background-color: var(--bg-color);">
+                        <input type="text" id="setting-bg-hex" oninput="updateColorFromHex('bg')" onchange="saveSettings()" maxlength="7" class="ui-text-sm p-2 w-full rounded-lg bg-gray-800" value="#000000" style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius);">
+                    </div>
+                </div>
+
+                <!-- S6: Gradient Direction (For Color Mix Theme) -->
+                <div class="setting-item">
+                    <label for="setting-gradient-direction" class="ui-text-sm block font-medium mb-2">5. Gradient Direction</label>
+                    <select id="setting-gradient-direction" onchange="saveSettings()" class="w-full p-3 rounded-lg bg-gray-800"
+                            style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius);">
+                        <option value="to right">Left to Right</option>
+                        <option value="to bottom right">Top Left to Bottom Right</option>
+                        <option value="to bottom">Top to Bottom</option>
+                        <option value="circle">Radial (Circle)</option>
+                    </select>
+                </div>
+
+                <!-- S7: Border Radius -->
+                <div class="setting-item">
+                    <label for="setting-border-radius" class="ui-text-sm block font-medium mb-2">6. Border Radius (<span id="radius-value">16</span>px)</label>
+                    <input type="range" id="setting-border-radius" min="0" max="40" step="2" value="16" oninput="updateRadiusValue()" onchange="saveSettings()" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                </div>
+                
+                <!-- S8: UI Scale/Font Size -->
+                <div class="setting-item">
+                    <label for="setting-ui-scale" class="ui-text-sm block font-medium mb-2">7. UI Scale / Font Size (<span id="scale-value">1.0</span>x)</label>
+                    <input type="range" id="setting-ui-scale" min="0.8" max="1.5" step="0.05" value="1.0" oninput="updateScaleValue()" onchange="saveSettings()" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <!-- S9: Animation Duration -->
+                <div class="setting-item">
+                    <label for="setting-anim-duration" class="ui-text-sm block font-medium mb-2">8. Animation Speed (<span id="anim-value">300</span>ms)</label>
+                    <input type="range" id="setting-anim-duration" min="100" max="1000" step="50" value="300" oninput="updateAnimValue()" onchange="saveSettings()" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                </div>
+                
+                <!-- S10: Liquid Glass Blur Strength -->
+                <div class="setting-item">
+                    <label for="setting-glass-blur" class="ui-text-sm block font-medium mb-2">9. Glass Blur Strength (<span id="blur-value">16</span>px)</label>
+                    <input type="range" id="setting-glass-blur" min="0" max="30" step="1" value="16" oninput="updateBlurValue()" onchange="saveSettings()" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                </div>
+                
+                <!-- Functionality Section -->
+                <h3 class="ui-text font-semibold border-b border-gray-700 pb-2 pt-4">Functionality</h3>
+
+                <!-- S11: Search Engine -->
+                <div class="setting-item">
+                    <label for="setting-search-engine" class="ui-text-sm block font-medium mb-2">10. Default Search Engine</label>
+                    <select id="setting-search-engine" onchange="saveSettings()" class="w-full p-3 rounded-lg bg-gray-800"
+                            style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius);">
+                        <option value="https://www.google.com/search?q=">Google</option>
+                        <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
+                        <option value="https://www.bing.com/search?q=">Bing</option>
+                        <option value="https://search.brave.com/search?q=">Brave Search</option>
+                    </select>
+                </div>
+
+                <!-- S12: Toggle Search History -->
+                <div class="setting-item flex justify-between items-center">
+                    <label for="setting-show-history" class="ui-text-sm font-medium">11. Show Search History</label>
+                    <input type="checkbox" id="setting-show-history" onchange="saveSettings()" class="h-5 w-5 rounded text-blue-600">
+                </div>
+
+                <!-- S13: Toggle Shortcuts Bar -->
+                <div class="setting-item flex justify-between items-center">
+                    <label for="setting-show-shortcuts" class="ui-text-sm font-medium">12. Show Shortcuts Bar</label>
+                    <input type="checkbox" id="setting-show-shortcuts" onchange="saveSettings()" class="h-5 w-5 rounded text-blue-600">
+                </div>
+
+                <!-- S14: Toggle Time/Date -->
+                <div class="setting-item flex justify-between items-center">
+                    <label for="setting-show-time" class="ui-text-sm font-medium">13. Show Current Time & Date</label>
+                    <input type="checkbox" id="setting-show-time" onchange="saveSettings()" class="h-5 w-5 rounded text-blue-600">
+                </div>
+
+                <!-- S15: Shortcut Icon Style -->
+                <div class="setting-item">
+                    <label for="setting-shortcut-icon-style" class="ui-text-sm block font-medium mb-2">14. Shortcut Icon Style</label>
+                    <select id="setting-shortcut-icon-style" onchange="saveSettings()" class="w-full p-3 rounded-lg bg-gray-800"
+                            style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius);">
+                        <option value="emoji">Emoji</option>
+                        <option value="text">First Letter (Text)</option>
+                    </select>
+                </div>
+                
+                <!-- S16: Shortcut Management Button -->
+                <div class="setting-item pt-4">
+                    <h4 class="ui-text-sm font-semibold mb-2">15. Manage Shortcuts</h4>
+                    <button onclick="openShortcutModal(true)" class="w-full py-3 rounded-lg font-semibold text-white animated-scale bg-gray-700 hover:bg-gray-600"
+                            style="background-color: var(--primary-color); border-radius: var(--border-radius); transition: all var(--transition-duration);">
+                        Add / Edit / Remove Shortcuts
+                    </button>
+                </div>
+                
+                <!-- S17: Reset Button -->
+                 <div class="setting-item pt-4">
+                    <button onclick="resetAllSettings()" class="w-full py-3 rounded-lg font-semibold text-white animated-scale bg-red-600 hover:bg-red-500"
+                            style="border-radius: var(--border-radius); transition: all var(--transition-duration);">
+                        Reset All Settings & History
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Shortcut Management Modal -->
+    <div id="shortcut-modal" class="fixed inset-0 flex items-center justify-center z-50 p-4 transition-transform duration-500 ease-out hidden">
+        <div class="bg-gray-900 p-8 rounded-xl shadow-2xl max-w-xl w-full transform animated-scale"
+             style="background-color: var(--secondary-color); border-radius: var(--border-radius); transition: all var(--transition-duration);">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="ui-text font-bold">Manage Shortcuts</h2>
+                <button onclick="closeShortcutModal()" class="p-2 rounded-full hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <!-- Shortcut Creation Form -->
+            <div class="space-y-4 mb-6 p-4 rounded-lg border border-gray-700">
+                <h3 class="ui-text-sm font-semibold">Add New Shortcut</h3>
+                <input type="text" id="shortcut-name" placeholder="Name (e.g., Google)" class="w-full p-3 rounded-lg bg-gray-800" style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius);">
+                <input type="url" id="shortcut-url" placeholder="URL (e.g., https://google.com)" class="w-full p-3 rounded-lg bg-gray-800" style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius);">
+                <input type="text" id="shortcut-icon" placeholder="Emoji/Text Icon (e.g., 🌐 or G)" class="w-full p-3 rounded-lg bg-gray-800" style="background-color: var(--bg-color); color: var(--text-color); border-radius: var(--border-radius);">
+                <button onclick="addShortcut()" class="w-full py-3 rounded-lg font-semibold text-white animated-scale bg-green-600 hover:bg-green-500"
+                        style="border-radius: var(--border-radius); transition: all var(--transition-duration);">
+                    Save Shortcut
+                </button>
+            </div>
+
+            <!-- Existing Shortcuts List -->
+            <h3 class="ui-text-sm font-semibold mb-2">Existing Shortcuts</h3>
+            <div id="existing-shortcuts" class="space-y-3 max-h-48 overflow-y-auto pr-2">
+                <!-- List items inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Global state and initialization
+        let appState = {
+            searchEngine: 'https://www.google.com/search?q=',
+            shortcuts: [],
+            history: [],
+            // Default Black & White Theme settings
+            settings: {
+                themeStyle: 'black-white', // solid, gradient, liquid-glass
+                primaryColor: '#A0A0A0', // Gray accent
+                secondaryColor: '#404040', // Darker gray for containers/inputs
+                textColor: '#FFFFFF',
+                bgColor: '#000000',
+                gradientDirection: 'to bottom right',
+                borderRadius: 16,
+                uiScale: 1.0,
+                animDuration: 300,
+                glassBlur: 16,
+                showHistory: true,
+                showShortcuts: true,
+                showTime: false,
+                shortcutIconStyle: 'emoji', // or 'text'
+            }
+        };
+
+        const LOCAL_STORAGE_KEY = 'startupPageSettingsV2';
+        const HISTORY_STORAGE_KEY = 'startupPageHistoryV2';
+        const MAX_HISTORY_ITEMS = 10;
+
+        // --- Utility Functions ---
+
+        // Loads state from localStorage
+        function loadState() {
+            const settings = localStorage.getItem(LOCAL_STORAGE_KEY);
+            const history = localStorage.getItem(HISTORY_STORAGE_KEY);
+
+            if (settings) {
+                appState.settings = { ...appState.settings, ...JSON.parse(settings) };
+            }
+            if (history) {
+                appState.history = JSON.parse(history);
+            }
+        }
+
+        // Saves current settings to localStorage
+        function saveSettings() {
+            // Update appState from setting inputs first
+            appState.settings.themeStyle = document.getElementById('setting-theme-style').value;
+            appState.settings.primaryColor = document.getElementById('setting-primary-color').value;
+            appState.settings.secondaryColor = document.getElementById('setting-secondary-color').value;
+            appState.settings.textColor = document.getElementById('setting-text-color').value;
+            appState.settings.bgColor = document.getElementById('setting-bg-color').value;
+            appState.settings.searchEngine = document.getElementById('setting-search-engine').value;
+            appState.settings.gradientDirection = document.getElementById('setting-gradient-direction').value;
+
+            appState.settings.borderRadius = parseInt(document.getElementById('setting-border-radius').value);
+            appState.settings.uiScale = parseFloat(document.getElementById('setting-ui-scale').value);
+            appState.settings.animDuration = parseInt(document.getElementById('setting-anim-duration').value);
+            appState.settings.glassBlur = parseInt(document.getElementById('setting-glass-blur').value);
+
+            appState.settings.showHistory = document.getElementById('setting-show-history').checked;
+            appState.settings.showShortcuts = document.getElementById('setting-show-shortcuts').checked;
+            appState.settings.showTime = document.getElementById('setting-show-time').checked;
+            appState.settings.shortcutIconStyle = document.getElementById('setting-shortcut-icon-style').value;
+
+            // Sync hex inputs
+            document.getElementById('setting-primary-hex').value = appState.settings.primaryColor;
+            document.getElementById('setting-secondary-hex').value = appState.settings.secondaryColor;
+            document.getElementById('setting-text-hex').value = appState.settings.textColor;
+            document.getElementById('setting-bg-hex').value = appState.settings.bgColor;
+            
+            // Save to storage
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState.settings));
+            applyTheme();
+            updateUIVisibility();
+        }
+
+        // Saves search history to localStorage
+        function saveHistory() {
+            localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(appState.history));
+        }
+        
+        // Updates the color value when hex code is typed
+        function updateColorFromHex(key) {
+            const hexInput = document.getElementById(`setting-${key}-hex`);
+            const colorInput = document.getElementById(`setting-${key}-color`);
+            const hexValue = hexInput.value.toUpperCase();
+            
+            // Simple validation: check if it's a valid hex code (e.g., #FFFFFF or #FFF)
+            if (/^#([0-9A-F]{3}){1,2}$/i.test(hexValue)) {
+                colorInput.value = hexValue;
+            } else if (hexValue.length === 7) {
+                 // If 7 chars long but invalid, default to black
+                 colorInput.value = '#000000';
+            }
+            // Trigger main save
+            saveSettings();
+        }
+        window.updateColorFromHex = updateColorFromHex; // Expose globally for HTML elements
+
+        // --- Core Theme Application ---
+
+        function applyTheme() {
+            const root = document.documentElement;
+            const settings = appState.settings;
+            const body = document.body;
+
+            // 1. Apply Global CSS Variables
+            root.style.setProperty('--primary-color', settings.primaryColor);
+            root.style.setProperty('--secondary-color', settings.secondaryColor);
+            root.style.setProperty('--text-color', settings.textColor);
+            root.style.setProperty('--bg-color', settings.bgColor);
+            root.style.setProperty('--border-radius', `${settings.borderRadius}px`);
+            root.style.setProperty('--ui-scale', settings.uiScale);
+            root.style.setProperty('--transition-duration', `${settings.animDuration}ms`);
+            root.style.setProperty('--glass-blur', `${settings.glassBlur}px`);
+            
+            // 2. Set Background based on Theme Style
+            if (settings.themeStyle === 'gradient') {
+                const gradient = settings.gradientDirection === 'circle'
+                    ? `radial-gradient(circle, ${settings.primaryColor} 0%, ${settings.bgColor} 100%)`
+                    : `linear-gradient(${settings.gradientDirection}, ${settings.primaryColor} 0%, ${settings.bgColor} 100%)`;
+                body.style.backgroundImage = gradient;
+                body.style.backgroundColor = settings.bgColor; // Fallback
+            } else {
+                body.style.backgroundImage = 'none';
+                body.style.backgroundColor = settings.bgColor;
+            }
+
+            // 3. Apply Liquid Glass Class to relevant elements
+            const liquidElements = document.querySelectorAll('#search-form, #shortcuts-menu, #initial-modal > div, #settings-modal > div, #shortcut-modal > div, #history-dropdown');
+            liquidElements.forEach(el => {
+                if (settings.themeStyle === 'liquid-glass') {
+                    el.classList.add('liquid-glass-element');
+                    // In Liquid Glass mode, we use a slightly transparent secondary color
+                    el.style.backgroundColor = `color-mix(in srgb, ${settings.secondaryColor} 10%, transparent)`;
+                } else {
+                    el.classList.remove('liquid-glass-element');
+                    el.style.backgroundColor = settings.secondaryColor;
+                }
+                
+                // Ensure text color is applied dynamically
+                el.style.color = settings.textColor;
+
+                // Apply custom border radius
+                if (el.id === 'search-form') {
+                    const searchInput = document.getElementById('search-input');
+                    const searchButton = el.querySelector('button');
+                    searchInput.style.borderRadius = `${settings.borderRadius}px 0 0 ${settings.borderRadius}px`;
+                    searchButton.style.borderRadius = `0 ${settings.borderRadius}px ${settings.borderRadius}px 0`;
+                    el.style.borderRadius = `${settings.borderRadius}px`; // container border radius is set by the elements inside
+
+                } else {
+                    el.style.borderRadius = `${settings.borderRadius}px`;
+                }
+
+            });
+            
+            // 4. Update Search Engine Display
+            appState.searchEngine = settings.searchEngine;
+            const engineName = document.querySelector(`#setting-search-engine option[value="${appState.searchEngine}"]`).textContent;
+            document.getElementById('search-input').placeholder = `Search ${engineName}, or your history...`;
+        }
+        
+        // Updates UI elements based on settings toggles
+        function updateUIVisibility() {
+            document.getElementById('shortcuts-bar').classList.toggle('hidden', !appState.settings.showShortcuts);
+            document.getElementById('time-date').classList.toggle('hidden', !appState.settings.showTime);
+            
+            // Ensure time loop is running if needed
+            if (appState.settings.showTime) {
+                updateTime();
+                if (!window.timeUpdateInterval) {
+                    window.timeUpdateInterval = setInterval(updateTime, 1000);
+                }
+            } else {
+                if (window.timeUpdateInterval) {
+                    clearInterval(window.timeUpdateInterval);
+                    window.timeUpdateInterval = null;
+                }
+            }
+        }
+        
+        // --- Settings Modal Handlers ---
+
+        function openSettingsModal() {
+            // 1. Sync input values with current appState
+            document.getElementById('setting-theme-style').value = appState.settings.themeStyle;
+            
+            document.getElementById('setting-primary-color').value = appState.settings.primaryColor;
+            document.getElementById('setting-primary-hex').value = appState.settings.primaryColor;
+            document.getElementById('setting-secondary-color').value = appState.settings.secondaryColor;
+            document.getElementById('setting-secondary-hex').value = appState.settings.secondaryColor;
+            document.getElementById('setting-text-color').value = appState.settings.textColor;
+            document.getElementById('setting-text-hex').value = appState.settings.textColor;
+            document.getElementById('setting-bg-color').value = appState.settings.bgColor;
+            document.getElementById('setting-bg-hex').value = appState.settings.bgColor;
+            
+            document.getElementById('setting-search-engine').value = appState.settings.searchEngine;
+            document.getElementById('setting-gradient-direction').value = appState.settings.gradientDirection;
+
+            document.getElementById('setting-border-radius').value = appState.settings.borderRadius;
+            document.getElementById('radius-value').textContent = appState.settings.borderRadius;
+            document.getElementById('setting-ui-scale').value = appState.settings.uiScale;
+            document.getElementById('scale-value').textContent = appState.settings.uiScale.toFixed(2);
+            document.getElementById('setting-anim-duration').value = appState.settings.animDuration;
+            document.getElementById('anim-value').textContent = appState.settings.animDuration;
+            document.getElementById('setting-glass-blur').value = appState.settings.glassBlur;
+            document.getElementById('blur-value').textContent = appState.settings.glassBlur;
+
+
+            document.getElementById('setting-show-history').checked = appState.settings.showHistory;
+            document.getElementById('setting-show-shortcuts').checked = appState.settings.showShortcuts;
+            document.getElementById('setting-show-time').checked = appState.settings.showTime;
+            document.getElementById('setting-shortcut-icon-style').value = appState.settings.shortcutIconStyle;
+            
+            // 2. Display Modal
+            const settingsModal = document.getElementById('settings-modal');
+            const overlay = document.getElementById('modal-overlay');
+            
+            settingsModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+            // Animate in
+            setTimeout(() => {
+                settingsModal.querySelector('div').classList.remove('translate-x-full');
+            }, 10);
+        }
+
+        function closeSettingsModal() {
+            const settingsModal = document.getElementById('settings-modal');
+            const overlay = document.getElementById('modal-overlay');
+
+            // Animate out
+            settingsModal.querySelector('div').classList.add('translate-x-full');
+            setTimeout(() => {
+                settingsModal.classList.add('hidden');
+                overlay.classList.add('hidden');
+            }, appState.settings.animDuration);
+        }
+
+        function closeAllModals() {
+            // Close settings
+            const settingsModal = document.getElementById('settings-modal');
+            if (!settingsModal.classList.contains('hidden')) {
+                closeSettingsModal();
+                return;
+            }
+            
+            // Close shortcut modal
+            const shortcutModal = document.getElementById('shortcut-modal');
+            if (!shortcutModal.classList.contains('hidden')) {
+                closeShortcutModal();
+                return;
+            }
+            
+            // Close initial modal (should only be closable via button, but good practice)
+            const initialModal = document.getElementById('initial-modal');
+            if (!initialModal.classList.contains('hidden')) {
+                // Do nothing, force user to confirm settings
+                return;
+            }
+        }
+
+        function updateRadiusValue() {
+            const val = document.getElementById('setting-border-radius').value;
+            document.getElementById('radius-value').textContent = val;
+        }
+        function updateScaleValue() {
+            const val = document.getElementById('setting-ui-scale').value;
+            document.getElementById('scale-value').textContent = parseFloat(val).toFixed(2);
+        }
+        function updateAnimValue() {
+            const val = document.getElementById('setting-anim-duration').value;
+            document.getElementById('anim-value').textContent = val;
+        }
+        function updateBlurValue() {
+            const val = document.getElementById('setting-glass-blur').value;
+            document.getElementById('blur-value').textContent = val;
+        }
+
+        // --- Initial Setup Modal ---
+
+        function showInitialModal() {
+            const hasSeen = localStorage.getItem('hasSeenInitialModal');
+            if (!hasSeen) {
+                document.getElementById('initial-modal').classList.remove('hidden');
+                document.getElementById('modal-overlay').classList.remove('hidden');
+                // Animate in
+                setTimeout(() => {
+                    document.getElementById('initial-modal').querySelector('div').classList.remove('scale-0');
+                }, 10);
+            }
+        }
+
+        function confirmInitialSetup() {
+            // 1. Save settings
+            appState.settings.searchEngine = document.getElementById('initial-search-engine').value;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState.settings));
+            localStorage.setItem('hasSeenInitialModal', 'true');
+            
+            // 2. Apply theme and close
+            applyTheme();
+            document.getElementById('modal-overlay').classList.add('hidden');
+            
+            const initialModal = document.getElementById('initial-modal');
+            // Animate out
+            initialModal.querySelector('div').classList.add('scale-0');
+            setTimeout(() => {
+                initialModal.classList.add('hidden');
+            }, appState.settings.animDuration);
+        }
+        
+        // --- Search Functionality ---
+
+        function handleSearch(event) {
+            event.preventDefault();
+            const input = document.getElementById('search-input');
+            const query = input.value.trim();
+
+            if (query) {
+                // Check if it's a history item link
+                if (query.startsWith('http')) {
+                    window.location.href = query;
+                    return;
+                }
+                
+                // Add to history
+                appState.history.unshift({ query: query, timestamp: new Date().toISOString() });
+                appState.history = appState.history.slice(0, MAX_HISTORY_ITEMS); // Trim
+                saveHistory();
+
+                // Redirect
+                window.location.href = appState.settings.searchEngine + encodeURIComponent(query);
+            }
+        }
+        
+        function populateHistoryDropdown(filter = '') {
+            const dropdown = document.getElementById('history-dropdown');
+            const input = document.getElementById('search-input');
+            
+            if (!appState.settings.showHistory || !filter) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            const filteredHistory = appState.history.filter(item => 
+                item.query.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            if (filteredHistory.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = '';
+            filteredHistory.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'ui-text-sm p-3 cursor-pointer hover:bg-gray-700 transition duration-150 ease-in-out truncate';
+                itemDiv.style.borderRadius = `${appState.settings.borderRadius * 0.5}px`;
+                itemDiv.textContent = item.query;
+                
+                // Clicking history item fills the search box
+                itemDiv.onclick = () => {
+                    input.value = item.query;
+                    dropdown.classList.add('hidden');
+                    input.focus();
+                };
+                
+                dropdown.appendChild(itemDiv);
+            });
+
+            dropdown.classList.remove('hidden');
+        }
+
+        // --- Shortcuts Management ---
+        
+        function renderShortcuts() {
+            const menu = document.getElementById('shortcuts-menu');
+            // Clear all current shortcuts (keep the add button placeholder if it exists)
+            const currentButtons = menu.querySelectorAll('.shortcut-link');
+            currentButtons.forEach(btn => btn.remove());
+
+            const addShortcutButton = menu.querySelector('button');
+
+            appState.shortcuts.forEach(shortcut => {
+                const isEmoji = appState.settings.shortcutIconStyle === 'emoji';
+                const content = isEmoji 
+                    ? `<span class="text-3xl">${shortcut.icon}</span>`
+                    : `<span class="ui-text-sm font-semibold">${shortcut.name.charAt(0).toUpperCase()}</span>`;
+                
+                const nameDisplay = `<span class="ui-text-sm mt-1 text-center truncate">${shortcut.name}</span>`;
+                
+                const link = document.createElement('a');
+                link.href = shortcut.url;
+                link.target = '_blank';
+                link.className = 'shortcut-link group p-3 flex flex-col items-center justify-center animated-scale shadow-lg transition duration-150 ease-in-out';
+                link.style.cssText = `
+                    min-width: 80px;
+                    min-height: 80px;
+                    background-color: var(--primary-color); 
+                    border-radius: var(--border-radius); 
+                    transition: all var(--transition-duration);
+                    color: var(--text-color);
+                `;
+                
+                link.innerHTML = `${content}${nameDisplay}`;
+                
+                // Insert shortcut before the add button
+                menu.insertBefore(link, addShortcutButton);
+            });
+            
+            // Re-hide/show the add button dynamically based on visibility setting
+            if (addShortcutButton) {
+                addShortcutButton.style.backgroundColor = appState.settings.primaryColor;
+                addShortcutButton.style.borderRadius = `${appState.settings.borderRadius}px`;
+            }
+        }
+        
+        function openShortcutModal(isManage = false) {
+            const shortcutModal = document.getElementById('shortcut-modal');
+            const overlay = document.getElementById('modal-overlay');
+
+            renderShortcutManagementList();
+
+            shortcutModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+            // Animate in
+            setTimeout(() => {
+                shortcutModal.querySelector('div').classList.remove('scale-0');
+            }, 10);
+            
+            // If opened from settings, ensure setting modal is closed
+            if (isManage) {
+                closeSettingsModal();
+            }
+        }
+
+        function closeShortcutModal() {
+            const shortcutModal = document.getElementById('shortcut-modal');
+            const overlay = document.getElementById('modal-overlay');
+
+            // Animate out
+            shortcutModal.querySelector('div').classList.add('scale-0');
+            setTimeout(() => {
+                shortcutModal.classList.add('hidden');
+                overlay.classList.add('hidden');
+            }, appState.settings.animDuration);
+        }
+
+        function addShortcut() {
+            const name = document.getElementById('shortcut-name').value.trim();
+            let url = document.getElementById('shortcut-url').value.trim();
+            const icon = document.getElementById('shortcut-icon').value.trim();
+
+            if (!name || !url || !icon) {
+                console.error("All shortcut fields must be filled.");
+                return;
+            }
+            
+            // Basic URL correction
+            if (!url.startsWith('http')) {
+                url = 'https://' + url;
+            }
+
+            appState.shortcuts.push({ name, url, icon });
+            localStorage.setItem('startupPageShortcutsV2', JSON.stringify(appState.shortcuts));
+
+            // Clear form and re-render
+            document.getElementById('shortcut-name').value = '';
+            document.getElementById('shortcut-url').value = '';
+            document.getElementById('shortcut-icon').value = '';
+
+            renderShortcutManagementList();
+            renderShortcuts();
+        }
+
+        function removeShortcut(index) {
+            appState.shortcuts.splice(index, 1);
+            localStorage.setItem('startupPageShortcutsV2', JSON.stringify(appState.shortcuts));
+            renderShortcutManagementList();
+            renderShortcuts();
+        }
+        
+        function renderShortcutManagementList() {
+            const list = document.getElementById('existing-shortcuts');
+            list.innerHTML = '';
+
+            appState.shortcuts.forEach((shortcut, index) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3 bg-gray-800 rounded-lg animated-scale';
+                item.style.cssText = `background-color: var(--bg-color); border-radius: ${appState.settings.borderRadius * 0.5}px; transition: all var(--transition-duration);`;
+                
+                item.innerHTML = `
+                    <div class="flex items-center truncate">
+                        <span class="text-xl mr-3">${shortcut.icon}</span>
+                        <span class="ui-text-sm font-medium truncate">${shortcut.name}</span>
+                    </div>
+                    <button onclick="removeShortcut(${index})" class="p-1 rounded-full text-red-400 hover:text-red-500 hover:bg-red-900 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-2 2h10" /></svg>
+                    </button>
+                `;
+                list.appendChild(item);
+            });
+            
+            if (appState.shortcuts.length === 0) {
+                 list.innerHTML = `<p class="ui-text-sm text-gray-400 text-center py-4">No shortcuts added yet.</p>`;
+            }
+        }
+        
+        // --- Time/Date Update ---
+
+        function updateTime() {
+            const now = new Date();
+            const timeOptions = { hour: '2-digit', minute: '2-digit' };
+            const dateOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+
+            document.getElementById('current-time').textContent = now.toLocaleTimeString(undefined, timeOptions);
+            document.getElementById('current-date').textContent = now.toLocaleDateString(undefined, dateOptions);
+        }
+        
+        // --- Reset Functionality ---
+        
+        function resetAllSettings() {
+            if (window.confirm("Are you sure you want to reset ALL settings and search history? This cannot be undone.")) {
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                localStorage.removeItem(HISTORY_STORAGE_KEY);
+                localStorage.removeItem('startupPageShortcutsV2');
+                localStorage.removeItem('hasSeenInitialModal');
+                
+                // Reload the page to reset state entirely
+                window.location.reload();
+            }
+        }
+        window.resetAllSettings = resetAllSettings;
+
+
+        // --- Initialization on Load ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Load data
+            loadState();
+            
+            // Load shortcuts separately (they can be managed independent of core settings)
+            const shortcuts = localStorage.getItem('startupPageShortcutsV2');
+            if (shortcuts) {
+                appState.shortcuts = JSON.parse(shortcuts);
+            }
+            
+            // 2. Apply theme and visibility settings
+            applyTheme();
+            updateUIVisibility();
+            renderShortcuts();
+            
+            // 3. Set up search input listener for history dropdown
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', (e) => populateHistoryDropdown(e.target.value));
+            searchInput.addEventListener('focus', (e) => populateHistoryDropdown(e.target.value));
+            searchInput.addEventListener('blur', () => {
+                // Delay hiding to allow click event on history item to register
+                setTimeout(() => document.getElementById('history-dropdown').classList.add('hidden'), 200);
+            });
+            
+            // 4. Show initial setup modal if never seen
+            showInitialModal();
+        });
+
+    </script>
+
+</body>
+</html>
